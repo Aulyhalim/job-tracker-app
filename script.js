@@ -1,4 +1,5 @@
 // --- GLOBAL STATE ---
+const API_BASE_URL = 'https://job-tracker-app-production.up.railway.app'; // <-- DIPERBAIKI: Menambahkan https://
 let currentUser = null;
 let applications = []; // Data ini sekarang akan diambil dari server
 let settings = {};
@@ -65,7 +66,8 @@ async function handleLogin(e) {
     const loginError = document.getElementById('loginError');
     loginError.textContent = '';
     try {
-        const response = await fetch('http://localhost:3000/login', {
+        // DIPERBAIKI: Menggunakan API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
@@ -90,7 +92,8 @@ async function handleRegister(e) {
     const registerError = document.getElementById('registerError');
     registerError.textContent = '';
     try {
-        const response = await fetch('http://localhost:3000/register', {
+        // DIPERBAIKI: Menggunakan API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
@@ -120,7 +123,6 @@ function updateHeader() {
     document.getElementById('userAvatar').textContent = currentUser.charAt(0);
 }
 
-// --- FUNGSI BARU UNTUK MENGAMBIL DATA APLIKASI ---
 async function fetchApplications() {
     const userId = sessionStorage.getItem('jobTrackerUserId');
     if (!userId) {
@@ -129,7 +131,8 @@ async function fetchApplications() {
         return;
     }
     try {
-        const response = await fetch(`http://localhost:3000/api/applications/user/${userId}`);
+        // DIPERBAIKI: Menggunakan API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}/api/applications/user/${userId}`);
         if (!response.ok) throw new Error("Failed to fetch data.");
         const data = await response.json();
         applications = data; // Isi array global dengan data dari server
@@ -139,7 +142,6 @@ async function fetchApplications() {
     }
 }
 
-// --- APP LOGIC ---
 function setupAppEventListeners() {
     document.getElementById('applicationForm').addEventListener('submit', handleFormSubmit);
     document.getElementById('searchInput').addEventListener('input', debounce(renderApplications, 300));
@@ -196,7 +198,7 @@ function openModal(id = null) {
         if (app) {
             document.getElementById('companyName').value = app.company;
             document.getElementById('position').value = app.position;
-            document.getElementById('applicationDate').value = app.applicationDate.split('T')[0]; // Format tanggal
+            document.getElementById('applicationDate').value = app.applicationDate.split('T')[0];
             document.getElementById('status').value = app.status;
             document.getElementById('notes').value = app.notes || '';
         }
@@ -212,7 +214,6 @@ function closeModal() {
     editingId = null;
 }
 
-// FUNGSI SUBMIT FORM YANG DIPERBARUI
 async function handleFormSubmit(e) {
     e.preventDefault();
     const userId = sessionStorage.getItem('jobTrackerUserId');
@@ -225,7 +226,8 @@ async function handleFormSubmit(e) {
         userId: parseInt(userId)
     };
 
-    let url = 'http://localhost:3000/api/applications';
+    // DIPERBAIKI: Menggunakan API_BASE_URL
+    let url = `${API_BASE_URL}/api/applications`;
     let method = 'POST';
 
     if (editingId) {
@@ -241,8 +243,8 @@ async function handleFormSubmit(e) {
         });
         if (!response.ok) throw new Error("Failed to save application.");
         
-        await fetchApplications(); // Ambil data terbaru
-        renderCurrentPage(); // Render ulang UI
+        await fetchApplications();
+        renderCurrentPage();
         closeModal();
     } catch (error) {
         console.error(error);
@@ -314,11 +316,11 @@ function getFilteredApplications() {
     });
 }
 
-// FUNGSI HAPUS YANG DIPERBARUI
 async function deleteApplication(id) {
     if (confirm('Are you sure you want to delete this application?')) {
         try {
-            const response = await fetch(`http://localhost:3000/api/applications/${id}`, { method: 'DELETE' });
+            // DIPERBAIKI: Menggunakan API_BASE_URL
+            const response = await fetch(`${API_BASE_URL}/api/applications/${id}`, { method: 'DELETE' });
             if (!response.ok && response.status !== 204) throw new Error("Failed to delete.");
             await fetchApplications();
             renderCurrentPage();
@@ -329,13 +331,15 @@ async function deleteApplication(id) {
     }
 }
 
+// DIPERBAIKI: Menggunakan versi final dari clearAllData
 async function clearAllData() {
     if (confirm('DANGER! This will permanently delete all applications for your account. Are you sure?')) {
         const userId = sessionStorage.getItem('jobTrackerUserId');
         try {
-            const response = await fetch(`http://localhost:3000/api/applications/user/${userId}`, { method: 'DELETE' });
+            // DIPERBAIKI: Menggunakan API_BASE_URL
+            const response = await fetch(`${API_BASE_URL}/api/applications/user/${userId}`, { method: 'DELETE' });
             if (!response.ok && response.status !== 204) throw new Error("Failed to clear data.");
-            await fetchApplications(); // Ambil data lagi (hasilnya akan kosong)
+            await fetchApplications();
             renderCurrentPage();
         } catch (error) {
             console.error(error);
@@ -344,7 +348,6 @@ async function clearAllData() {
     }
 }
 
-// ... Sisa fungsi (charts, utilities) tetap sama ...
 function initializeCharts() { if (document.getElementById('trendChart')) initializeTrendChart(); if (document.getElementById('statusChart')) initializeStatusChart(); }
 function initializeTrendChart() { const ctx = document.getElementById('trendChart').getContext('2d'); const chartData = getTrendData(30); charts.trend = new Chart(ctx, { type: 'line', data: { labels: chartData.labels, datasets: [{ label: 'Applications', data: chartData.data, borderColor: '#3b82f6', tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: settings.darkMode ? '#94a3b8' : '#64748b' }, grid: { color: settings.darkMode ? '#334155' : '#e2e8f0' } }, y: { ticks: { color: settings.darkMode ? '#94a3b8' : '#64748b' }, grid: { color: settings.darkMode ? '#334155' : '#e2e8f0' } } }, plugins: { legend: { labels: { color: settings.darkMode ? '#f1f5f9' : '#0f172a' } } } } }); }
 function initializeStatusChart() { const ctx = document.getElementById('statusChart').getContext('2d'); const chartData = getStatusData(); charts.status = new Chart(ctx, { type: 'doughnut', data: { labels: chartData.labels, datasets: [{ data: chartData.data, backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: settings.darkMode ? '#f1f5f9' : '#0f172a', padding: 20 } } } } }); }
@@ -353,7 +356,6 @@ function updateStatusChart() { if (!charts.status) return; const chartData = get
 function getTrendData(days) { const labels = Array.from({ length: days }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d; }).reverse(); const data = labels.map(date => { const dateStr = date.toISOString().split('T')[0]; return applications.filter(app => app.applicationDate.startsWith(dateStr)).length; }); return { labels: labels.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })), data }; }
 function getStatusData() { const stats = calculateStats(); return { labels: ['Applied', 'Interview', 'Accepted', 'Rejected'], data: [stats.applied, stats.interview, stats.accepted, stats.rejected] }; }
 function exportData() { if (applications.length === 0) return alert('No data to export.'); const jsonData = JSON.stringify({ applications, exportDate: new Date().toISOString() }, null, 2); const blob = new Blob([jsonData], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `job_applications_${currentUser}_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); }
-function clearAllData() { alert("Fitur ini perlu dihubungkan ke back-end!"); }
 function formatDate(d) { try { return new Date(d).toLocaleDateString('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return 'Invalid Date'; } }
 function getStatusLabel(s) { return { applied: 'Applied', interview: 'Interview', accepted: 'Accepted', rejected: 'Rejected' }[s] || 'N/A'; }
 function getStatusIcon(s) { return { applied: 'paper-plane', interview: 'users', accepted: 'check-circle', rejected: 'times-circle' }[s] || 'circle'; }
