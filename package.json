@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "migrate": "node ./node_modules/sequelize-cli/lib/sequelize db:migrate"
+    "db:migrate": "sequelize-cli db:migrate"
   },
   "keywords": [],
   "author": "",
