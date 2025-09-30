@@ -6,7 +6,7 @@
   "scripts": {
   "test": "echo \"Error: no test specified\" && exit 1",
   "start": "node index.js",
-  "migrate": "./node_modules/.bin/sequelize-cli db:migrate --env production"
+  "migrate": "node node_modules/sequelize-cli/lib/sequelize db:migrate --env production"
 },
   "keywords": [],
   "author": "",
