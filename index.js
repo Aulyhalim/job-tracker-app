@@ -6,22 +6,24 @@ const { runMigrations } = require('./db/runMigrations');
 
 const app = express();
 
-// Konfigurasi CORS yang lebih spesifik
 const allowedOrigins = [
-  'http://127.0.0.1:5500', // Ganti dengan alamat lokal Anda jika berbeda
-  'http://localhost:5500',   // Ganti dengan alamat lokal Anda jika berbeda
-  'https://auly-job-tracker-oyalr1.vercel.app' // URL Frontend Anda dari Vercel
+  'http://127.0.0.1:5500',
+  'http://localhost:5500',
+  'https://auly-job-tracker-app.vercel.app'
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Izinkan request tanpa origin (seperti dari Postman) atau dari origin yang ada di daftar
+    // Izinkan request tanpa origin (Postman, curl, dll) atau dari origin yang diizinkan
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
-  }
+  },
+  credentials: true, // Tambahkan ini untuk mengizinkan credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Izinkan method yang digunakan
+  allowedHeaders: ['Content-Type', 'Authorization'] // Header yang diizinkan
 };
 
 app.use(cors(corsOptions));
