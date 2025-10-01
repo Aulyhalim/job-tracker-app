@@ -144,17 +144,13 @@ app.delete('/api/applications/user/:userId', async (req, res) => {
 });
 
 
-// Fungsi untuk memulai server
 const startServer = async () => {
-  // 1. Jalankan migrasi terlebih dahulu
   await runMigrations();
 
-  // 2. Jika migrasi berhasil, baru jalankan server Express
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {  // ← Tambahkan '0.0.0.0'
     console.log(`Server berhasil berjalan di port ${PORT}`);
   });
 };
 
-// Panggil fungsi untuk memulai semuanya
 startServer();
