@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "npm run db:migrate && node index.js",
-  "db:migrate": "npx sequelize-cli db:migrate"
+  "start": "node index.js"
 },
   "keywords": [],
   "author": "",
@@ -16,6 +15,7 @@
     "express": "^4.19.2",
     "mysql2": "^3.10.0",
     "sequelize": "^6.37.3",
-    "sequelize-cli": "^6.6.2"
+    "sequelize-cli": "^6.6.2",
+    "umzug": "^3.8.2"
   }
 }

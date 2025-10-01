@@ -1,10 +1,12 @@
 const express = require('express');
-const cors = require('cors'); // <-- TAMBAHKAN BARIS INI
+const cors = require('cors');
 const { User, Application } = require('./models');
+// Impor fungsi migrasi kita
+const { runMigrations } = require('./db/runMigrations');
 
 const app = express();
 
-app.use(cors()); // <-- TAMBAHKAN BARIS INI
+app.use(cors());
 app.use(express.json());
 
 // --- OTENTIKASI ---
@@ -109,4 +111,18 @@ app.delete('/api/applications/user/:userId', async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('Server berjalan di port 3000'));
+
+// Fungsi untuk memulai server
+const startServer = async () => {
+  // 1. Jalankan migrasi terlebih dahulu
+  await runMigrations();
+
+  // 2. Jika migrasi berhasil, baru jalankan server Express
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server berhasil berjalan di port ${PORT}`);
+  });
+};
+
+// Panggil fungsi untuk memulai semuanya
+startServer();
