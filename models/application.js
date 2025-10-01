@@ -20,7 +20,11 @@ module.exports = (sequelize, DataTypes) => {
     applicationDate: DataTypes.DATE,
     status: DataTypes.STRING,
     notes: DataTypes.TEXT,
-    userId: DataTypes.INTEGER
+    userId: DataTypes.INTEGER,
+    // PENAMBAHAN KOLOM BARU
+    expectedSalary: DataTypes.INTEGER,
+    source: DataTypes.STRING,
+    interviewDate: DataTypes.DATEONLY 
   }, {
     sequelize,
     modelName: 'Application',

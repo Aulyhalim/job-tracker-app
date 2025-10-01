@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const { User, Application } = require('./models');
+// Pastikan Sequelize diimpor bersama User dan Application
+const { User, Application, Sequelize } = require('./models'); 
 const { runMigrations } = require('./db/runMigrations');
 
 const app = express();
 
-// SOLUSI: CORS yang lebih permisif untuk development dan production
+// SOLUSI: Konfigurasi CORS yang lebih ketat dan benar
 app.use(cors({
   origin: function (origin, callback) {
     // Daftar origin yang diizinkan
@@ -16,7 +17,7 @@ app.use(cors({
     ];
     
     // Izinkan jika:
-    // 1. Tidak ada origin (seperti Postman)
+    // 1. Tidak ada origin (terjadi pada beberapa Postman/cURL/file:///)
     // 2. Origin ada di daftar allowedOrigins
     // 3. Origin berasal dari vercel.app (untuk preview deployments)
     if (!origin || 
@@ -24,12 +25,13 @@ app.use(cors({
         origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
+      // Tolak permintaan dari origin lain
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] // Tambah header yang umum
 }));
 
 app.use(express.json());
@@ -39,22 +41,30 @@ app.get('/', (req, res) => {
   res.json({ message: 'Job Tracker API is running!' });
 });
 
-// ... sisanya sama seperti sebelumnya
-
 // --- OTENTIKASI ---
 app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required.' });
+    // MENANGKAP KOLOM EMAIL YANG BARU
+    const { username, password, email } = req.body; 
+    
+    if (!username || !password || !email) { // VALIDASI EMAIL
+        return res.status(400).json({ error: 'Username, email, and password are required.' });
     }
     try {
-        const existingUser = await User.findOne({ where: { username: username } });
+        // Cek: apakah username ATAU email sudah ada menggunakan Op.or dari Sequelize
+        const existingUser = await User.findOne({ 
+            where: { 
+                [Sequelize.Op.or]: [{ username: username }, { email: email }]
+            } 
+        });
+        
         if (existingUser) {
-            return res.status(400).json({ error: 'Username already exists.' });
+            return res.status(400).json({ error: 'Username or email already exists.' });
         }
-        const newUser = await User.create({ username, password });
+        // MEMBUAT USER BARU DENGAN EMAIL
+        const newUser = await User.create({ username, password, email });
         res.status(201).json(newUser);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to create user.' });
     }
 });
@@ -62,24 +72,14 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
-    console.log('Login attempt:', { username, password }); // Debug log
-    
     try {
         const user = await User.findOne({ where: { username: username } });
         
-        console.log('User found:', user ? 'Yes' : 'No'); // Debug log
-        
         if (!user) {
-            console.log('User not found');
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
         
-        console.log('Database password:', user.password); // Debug log
-        console.log('Input password:', password); // Debug log
-        console.log('Passwords match:', user.password === password); // Debug log
-        
         if (user.password !== password) {
-            console.log('Password mismatch');
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
         
@@ -88,8 +88,6 @@ app.post('/login', async (req, res) => {
             id: user.id, 
             username: user.username 
         };
-        
-        console.log('Login successful, returning:', userData); // Debug log
         
         res.status(200).json({ 
             message: 'Login successful!', 
@@ -121,6 +119,7 @@ app.get('/api/applications/user/:userId', async (req, res) => {
 // POST: Membuat lamaran baru
 app.post('/api/applications', async (req, res) => {
     try {
+        // Pastikan model sudah diperbarui untuk menerima expectedSalary, source, interviewDate
         const newApplication = await Application.create(req.body);
         res.status(201).json(newApplication);
     } catch (error) {

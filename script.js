@@ -1,5 +1,5 @@
 // --- GLOBAL STATE ---
-const API_BASE_URL = 'https://job-tracker-app-production.up.railway.app'; // <-- DIPERBAIKI: Menambahkan https://
+const API_BASE_URL = 'https://job-tracker-app-production.up.railway.app';
 let currentUser = null;
 let applications = []; // Data ini sekarang akan diambil dari server
 let settings = {};
@@ -26,6 +26,20 @@ function initializeApp() {
 function setupAuthEventListeners() {
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('registerForm').addEventListener('submit', handleRegister);
+    
+    // Logika Show/Hide Password
+    document.querySelectorAll('.password-toggle').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    });
 }
 
 function showAuthPage() {
@@ -89,14 +103,16 @@ async function handleRegister(e) {
     e.preventDefault();
     const username = document.getElementById('registerUsername').value;
     const password = document.getElementById('registerPassword').value;
+    // PENAMBAHAN: Ambil nilai email
+    const email = document.getElementById('registerEmail').value; 
     const registerError = document.getElementById('registerError');
     registerError.textContent = '';
     try {
-        // DIPERBAIKI: Menggunakan API_BASE_URL
+        // DIPERBAIKI: Menggunakan API_BASE_URL dan mengirim email
         const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({ username, password, email }), // Kirim email
         });
         const data = await response.json();
         if (!response.ok) { throw new Error(data.error || 'Registration failed'); }
@@ -147,6 +163,16 @@ function setupAppEventListeners() {
     document.getElementById('searchInput').addEventListener('input', debounce(renderApplications, 300));
     document.getElementById('statusFilter').addEventListener('change', renderApplications);
     document.getElementById('sortBy').addEventListener('change', renderApplications);
+    
+    // PENAMBAHAN: Event listener untuk menampilkan/menyembunyikan Interview Date
+    document.getElementById('status').addEventListener('change', toggleInterviewDateInput);
+}
+
+// PENAMBAHAN FUNGSI: Logika untuk menampilkan/menyembunyikan input Interview Date
+function toggleInterviewDateInput() {
+    const isInterview = document.getElementById('status').value === 'interview';
+    document.getElementById('interviewDateRow').style.display = isInterview ? 'flex' : 'none';
+    document.getElementById('interviewDate').required = isInterview;
 }
 
 function showPage(pageId) {
@@ -192,6 +218,7 @@ function openModal(id = null) {
     const modal = document.getElementById('applicationModal');
     const form = document.getElementById('applicationForm');
     form.reset();
+    
     if (id) {
         document.getElementById('modalTitle').textContent = 'Edit Application';
         const app = applications.find(app => app.id == id);
@@ -201,10 +228,22 @@ function openModal(id = null) {
             document.getElementById('applicationDate').value = app.applicationDate.split('T')[0];
             document.getElementById('status').value = app.status;
             document.getElementById('notes').value = app.notes || '';
+            document.getElementById('expectedSalary').value = app.expectedSalary || '';
+            document.getElementById('source').value = app.source || 'LinkedIn';
+            
+            // PENAMBAHAN: Memuat data Interview Date
+            const isInterview = app.status === 'interview';
+            document.getElementById('interviewDateRow').style.display = isInterview ? 'flex' : 'none';
+            document.getElementById('interviewDate').required = isInterview;
+            // Split('T')[0] untuk memastikan format 'yyyy-mm-dd' yang diterima oleh input type="date"
+            document.getElementById('interviewDate').value = app.interviewDate ? app.interviewDate.split('T')[0] : '';
         }
     } else {
         document.getElementById('modalTitle').textContent = 'Add New Application';
         setTodayDate();
+        // PENAMBAHAN: Sembunyikan input wawancara saat mode tambah
+        document.getElementById('interviewDateRow').style.display = 'none'; 
+        document.getElementById('interviewDate').required = false; 
     }
     modal.classList.add('active');
 }
@@ -223,7 +262,11 @@ async function handleFormSubmit(e) {
         applicationDate: document.getElementById('applicationDate').value,
         status: document.getElementById('status').value,
         notes: document.getElementById('notes').value,
-        userId: parseInt(userId)
+        userId: parseInt(userId),
+        expectedSalary: document.getElementById('expectedSalary').value,
+        source: document.getElementById('source').value,
+        // PENAMBAHAN: Mengambil data Interview Date
+        interviewDate: document.getElementById('interviewDate').value || null 
     };
 
     // DIPERBAIKI: Menggunakan API_BASE_URL
@@ -244,12 +287,104 @@ async function handleFormSubmit(e) {
         if (!response.ok) throw new Error("Failed to save application.");
         
         await fetchApplications();
-        renderCurrentPage();
+        
+        // SINKRONISASI DATA LINTAS HALAMAN (Permintaan Anda)
+        renderDashboard();       
+        renderApplications();    
+        renderCompanies();       
+        renderCalendar();        
+        renderAnalytics();       
+
+        // renderCurrentPage() akan memastikan halaman yang ditampilkan saat ini adalah yang terbaru.
+        showPage(currentPage);
         closeModal();
     } catch (error) {
         console.error(error);
         alert("Error saving application.");
     }
+}
+
+// PENAMBAHAN FUNGSI: Render Companies
+function renderCompanies() {
+    const page = document.getElementById('companiesGrid');
+    if (!page) return;
+    
+    if (applications.length === 0) {
+        page.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><div class="empty-icon"><i class="fas fa-building"></i></div><h3 class="empty-title">No Companies Tracked</h3><p class="empty-description">Add an application to see companies listed here.</p></div>`;
+        return;
+    }
+
+    // Mendapatkan daftar perusahaan unik dan jumlah aplikasi
+    const companyMap = applications.reduce((acc, app) => {
+        acc[app.company] = (acc[app.company] || 0) + 1;
+        return acc;
+    }, {});
+
+    let html = '<div class="applications-grid">';
+    for (const company in companyMap) {
+        html += `
+            <div class="application-card">
+                <div class="company-name">${company}</div>
+                <div class="position">${companyMap[company]} Applications Tracked</div>
+                <button class="btn btn-sm btn-outline" onclick="document.getElementById('searchInput').value='${company}'; showPage('applications')"><i class="fas fa-search"></i> View Applications</button>
+            </div>
+        `;
+    }
+    html += '</div>';
+    page.innerHTML = html;
+}
+
+// PENAMBAHAN FUNGSI: Render Analytics (Termasuk Rata-Rata Gaji)
+function renderAnalytics() {
+    const page = document.getElementById('analyticsGrid');
+    if (!page) return;
+    
+    // Hitung rata-rata gaji dari aplikasi yang memiliki nilai
+    const validSalaries = applications
+        .map(app => parseFloat(app.expectedSalary))
+        .filter(salary => !isNaN(salary) && salary > 0);
+
+    const avgSalary = validSalaries.length > 0 
+        ? (validSalaries.reduce((sum, sal) => sum + sal, 0) / validSalaries.length) 
+        : 0;
+
+    // Format mata uang IDR
+    const formattedAvgSalary = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(avgSalary);
+
+    page.innerHTML = `
+        <div class="dashboard-grid">
+            <div class="stat-card info">
+                <div class="stat-icon info"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="stat-number">${formattedAvgSalary}</div>
+                <div class="stat-label">Avg. Expected Salary</div>
+            </div>
+        </div>
+    `;
+}
+
+// PENAMBAHAN FUNGSI: Render Calendar (Daftar Wawancara)
+function renderCalendar() {
+    const page = document.getElementById('calendarGrid');
+    if (!page) return;
+
+    // Filter aplikasi yang berstatus 'interview' dan memiliki tanggal wawancara
+    const interviewApps = applications
+        .filter(app => app.status === 'interview' && app.interviewDate)
+        .sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate));
+    
+    if (interviewApps.length === 0) {
+         page.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-calendar-alt"></i></div><h3 class="empty-title">No Interviews Scheduled</h3><p class="empty-description">Update an application status to 'Interview' and add a date to see it here.</p></div>`;
+         return;
+    }
+
+    // Implementasi sederhana: Daftar wawancara yang akan datang
+    let html = '<h3>Upcoming Interviews</h3><ul class="interview-list" style="list-style: none; padding-left: 0;">';
+    interviewApps.forEach(app => {
+        const date = app.interviewDate ? formatDate(app.interviewDate) : 'Date TBD'; 
+        html += `<li style="padding: 10px 0; border-bottom: 1px dashed var(--border-light);"><strong>${app.company}</strong> (${app.position}) - ${date}</li>`;
+    });
+    html += '</ul>';
+    page.innerHTML = html;
 }
 
 function setTodayDate() {
@@ -260,6 +395,10 @@ function renderCurrentPage() {
     switch (currentPage) {
         case 'dashboard': renderDashboard(); break;
         case 'applications': renderApplications(); break;
+        // PENAMBAHAN: Panggil fungsi render untuk halaman baru
+        case 'analytics': renderAnalytics(); break;
+        case 'calendar': renderCalendar(); break;
+        case 'companies': renderCompanies(); break;
         default:
             const page = document.getElementById(currentPage);
             if (page && !page.innerHTML) {
@@ -290,7 +429,30 @@ function renderApplications() {
         grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><div class="empty-icon"><i class="fas fa-folder-open"></i></div><h3 class="empty-title">No Applications Found</h3><p class="empty-description">Add your first application to get started!</p></div>`;
         return;
     }
-    grid.innerHTML = filteredApps.map(app => `<div class="application-card status-${app.status} animate__animated animate__fadeInUp"><div class="application-header"><div class="company-info"><div class="company-name">${app.company}</div><div class="position">${app.position}</div></div><div class="application-actions"><button class="btn-sm btn-edit" onclick="openModal('${app.id}')" title="Edit"><i class="fas fa-edit"></i></button><button class="btn-sm btn-delete" onclick="deleteApplication('${app.id}')" title="Delete"><i class="fas fa-trash"></i></button></div></div><div class="detail-row"><i class="fas fa-calendar"></i> Applied: ${formatDate(app.applicationDate)}</div><span class="status-badge status-${app.status}"><i class="fas fa-${getStatusIcon(app.status)}"></i> ${getStatusLabel(app.status)}</span>${app.notes ? `<div class="notes">${app.notes.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : ''}</div>`).join('');
+    grid.innerHTML = filteredApps.map(app => {
+        const salaryInfo = app.expectedSalary ? `<div class="detail-row" title="Expected Salary"><i class="fas fa-money-bill-wave"></i> ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(app.expectedSalary))}</div>` : '';
+        const sourceInfo = app.source ? `<div class="detail-row" title="Source"><i class="fas fa-link"></i> Source: ${app.source}</div>` : '';
+        const interviewInfo = app.status === 'interview' && app.interviewDate ? `<div class="detail-row" title="Interview Date"><i class="fas fa-calendar-alt"></i> Interview: ${formatDate(app.interviewDate)}</div>` : '';
+        
+        return `<div class="application-card status-${app.status} animate__animated animate__fadeInUp">
+            <div class="application-header">
+                <div class="company-info">
+                    <div class="company-name">${app.company}</div>
+                    <div class="position">${app.position}</div>
+                </div>
+                <div class="application-actions">
+                    <button class="btn-sm btn-edit" onclick="openModal('${app.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn-sm btn-delete" onclick="deleteApplication('${app.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="detail-row"><i class="fas fa-calendar"></i> Applied: ${formatDate(app.applicationDate)}</div>
+            ${interviewInfo}
+            ${salaryInfo}
+            ${sourceInfo}
+            <span class="status-badge status-${app.status}"><i class="fas fa-${getStatusIcon(app.status)}"></i> ${getStatusLabel(app.status)}</span>
+            ${app.notes ? `<div class="notes">${app.notes.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : ''}
+        </div>`;
+    }).join('');
 }
 
 function calculateStats() {
@@ -323,6 +485,14 @@ async function deleteApplication(id) {
             const response = await fetch(`${API_BASE_URL}/api/applications/${id}`, { method: 'DELETE' });
             if (!response.ok && response.status !== 204) throw new Error("Failed to delete.");
             await fetchApplications();
+            
+            // SINKRONISASI DATA LINTAS HALAMAN
+            renderDashboard();       
+            renderApplications();    
+            renderCompanies();       
+            renderCalendar();        
+            renderAnalytics();       
+
             renderCurrentPage();
         } catch (error) {
             console.error(error);
@@ -340,6 +510,14 @@ async function clearAllData() {
             const response = await fetch(`${API_BASE_URL}/api/applications/user/${userId}`, { method: 'DELETE' });
             if (!response.ok && response.status !== 204) throw new Error("Failed to clear data.");
             await fetchApplications();
+            
+            // SINKRONISASI DATA LINTAS HALAMAN
+            renderDashboard();       
+            renderApplications();    
+            renderCompanies();       
+            renderCalendar();        
+            renderAnalytics();       
+
             renderCurrentPage();
         } catch (error) {
             console.error(error);
