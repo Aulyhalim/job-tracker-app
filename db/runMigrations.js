@@ -7,10 +7,7 @@ require('dotenv').config();
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'mysql',
   dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false
-    }
+    connectTimeout: 60000 // Timeout 60 detik
   },
   logging: console.log, // Tampilkan log query untuk debugging
 });
