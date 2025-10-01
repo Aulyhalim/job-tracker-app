@@ -61,17 +61,46 @@ app.post('/register', async (req, res) => {
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+    
+    console.log('Login attempt:', { username, password }); // Debug log
+    
     try {
         const user = await User.findOne({ where: { username: username } });
-        if (!user || user.password !== password) {
+        
+        console.log('User found:', user ? 'Yes' : 'No'); // Debug log
+        
+        if (!user) {
+            console.log('User not found');
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
-        const userData = { id: user.id, username: user.username };
-        res.status(200).json({ message: 'Login successful!', user: userData });
+        
+        console.log('Database password:', user.password); // Debug log
+        console.log('Input password:', password); // Debug log
+        console.log('Passwords match:', user.password === password); // Debug log
+        
+        if (user.password !== password) {
+            console.log('Password mismatch');
+            return res.status(401).json({ error: 'Invalid username or password.' });
+        }
+        
+        // PENTING: Pastikan struktur response sesuai dengan yang diharapkan frontend
+        const userData = { 
+            id: user.id, 
+            username: user.username 
+        };
+        
+        console.log('Login successful, returning:', userData); // Debug log
+        
+        res.status(200).json({ 
+            message: 'Login successful!', 
+            user: userData 
+        });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ error: 'Server error during login.' });
     }
 });
+
 
 
 // --- CRUD UNTUK APPLICATIONS ---
