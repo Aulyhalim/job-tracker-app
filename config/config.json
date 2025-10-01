@@ -10,10 +10,7 @@
     "use_env_variable": "DATABASE_URL",
     "dialect": "mysql",
     "dialectOptions": {
-      "ssl": {
-        "require": true,
-        "rejectUnauthorized": false
-      }
+      "connectTimeout": 60000
     }
   }
 }

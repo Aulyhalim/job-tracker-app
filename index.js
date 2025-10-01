@@ -1,33 +1,45 @@
 const express = require('express');
 const cors = require('cors');
 const { User, Application } = require('./models');
-// Impor fungsi migrasi kita
 const { runMigrations } = require('./db/runMigrations');
 
 const app = express();
 
-const allowedOrigins = [
-  'http://127.0.0.1:5500',
-  'http://localhost:5500',
-  'https://auly-job-tracker-app.vercel.app'
-];
-
-const corsOptions = {
+// SOLUSI: CORS yang lebih permisif untuk development dan production
+app.use(cors({
   origin: function (origin, callback) {
-    // Izinkan request tanpa origin (Postman, curl, dll) atau dari origin yang diizinkan
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Daftar origin yang diizinkan
+    const allowedOrigins = [
+      'http://127.0.0.1:5500',
+      'http://localhost:5500',
+      'https://auly-job-tracker-app.vercel.app'
+    ];
+    
+    // Izinkan jika:
+    // 1. Tidak ada origin (seperti Postman)
+    // 2. Origin ada di daftar allowedOrigins
+    // 3. Origin berasal dari vercel.app (untuk preview deployments)
+    if (!origin || 
+        allowedOrigins.includes(origin) || 
+        origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Tambahkan ini untuk mengizinkan credentials
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Izinkan method yang digunakan
-  allowedHeaders: ['Content-Type', 'Authorization'] // Header yang diizinkan
-};
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
+
+// Tambahkan endpoint test untuk memastikan server berjalan
+app.get('/', (req, res) => {
+  res.json({ message: 'Job Tracker API is running!' });
+});
+
+// ... sisanya sama seperti sebelumnya
 
 // --- OTENTIKASI ---
 app.post('/register', async (req, res) => {
