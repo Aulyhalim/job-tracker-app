@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run db:migrate && node index.js",
-    "db:migrate": "sequelize-cli db:migrate"
+    "db:migrate": "npx sequelize-cli db:migrate"
   },
   "keywords": [],
   "author": "",
