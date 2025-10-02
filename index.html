@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selamat Datang di Job Tracker</title>
+    <meta name="description" content="Job Tracker adalah aplikasi untuk membantu Anda melacak semua lamaran kerja di satu tempat. Atur karier Anda dengan lebih baik.">
+    <title>Job Tracker - Lacak Lamaran Kerjamu dengan Mudah</title>
     <link rel="icon" type="image/png" href="work-logo.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="landing-style.css">
@@ -14,15 +15,23 @@
         <div class="container">
             <a href="#" class="logo"><i class="fas fa-briefcase"></i> Job Tracker</a>
             <div class="nav-links">
+                <a href="#how-it-works" class="nav-link">Cara Kerja</a>
+                <a href="#features" class="nav-link">Fitur</a>
+                <a href="#testimonials" class="nav-link">Testimonial</a>
                 <a href="app.html" class="btn btn-secondary">Login</a>
                 <a href="app.html" class="btn btn-primary">Daftar Sekarang</a>
+
+                <button id="theme-toggle-btn" class="theme-toggle-btn">
+                    <i class="fas fa-moon icon-moon"></i>
+                    <i class="fas fa-sun icon-sun"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-    <header class="hero">
+    <header class="hero" id="home">
         <div class="container hero-content">
-            <h1>Lacak Lamaran Kerjamu dengan Mudah</h1>
+            <h1>Ubah Kekacauan Lamaran Kerja Menjadi Kesempatan</h1>
             <p>Atur semua proses lamaran kerjamu di satu tempat, mulai dari mengirim CV hingga jadwal wawancara.</p>
             <a href="app.html" class="btn btn-primary btn-large">Mulai Sekarang, Gratis!</a>
             <div class="hero-image">
@@ -31,26 +40,73 @@
         </div>
     </header>
 
-    <section class="features">
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="step">
+                <span>1</span>
+                <i class="fas fa-user-plus"></i>
+                <h3>Daftar Akun</h3>
+                <p>Buat akun gratis Anda dalam waktu kurang dari satu menit.</p>
+            </div>
+            <div class="step">
+                <span>2</span>
+                <i class="fas fa-file-alt"></i>
+                <h3>Catat Lamaran</h3>
+                <p>Masukkan setiap detail lamaran yang Anda kirim ke perusahaan impian.</p>
+            </div>
+            <div class="step">
+                <span>3</span>
+                <i class="fas fa-chart-line"></i>
+                <h3>Lacak Progres</h3>
+                <p>Pantau status semua lamaran Anda secara real-time dari dashboard analitik.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
         <div class="container">
             <h2>Fitur Unggulan Kami</h2>
             <div class="features-grid">
                 <div class="feature-card">
                     <i class="fas fa-tachometer-alt"></i>
-                    <h3>Dashboard Analitik</h3>
+                    <h3>Pahami Peluangmu</h3>
                     <p>Lihat ringkasan total lamaran, status diterima, ditolak, dan dalam proses wawancara secara visual.</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-clipboard-list"></i>
-                    <h3>Manajemen Lamaran</h3>
+                    <h3>Semua di Satu Tempat</h3>
                     <p>Catat setiap detail lamaran, termasuk posisi, perusahaan, tanggal, dan catatan penting lainnya.</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-calendar-alt"></i>
-                    <h3>Kalender Wawancara</h3>
+                    <h3>Jangan Lewatkan Jadwal</h3>
                     <p>Jangan pernah lewatkan jadwal wawancara penting dengan pengingat otomatis dan kalender terintegrasi.</p>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <h2>Apa Kata Mereka?</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p>"Aplikasi ini benar-benar game-changer! Dulu saya pusing melacak lamaran di spreadsheet, sekarang semuanya terorganisir dengan rapi. Sangat direkomendasikan!"</p>
+                    <h4>- Sarah L., Web Developer</h4>
+                </div>
+                <div class="testimonial-card">
+                    <p>"Fitur analitiknya luar biasa. Saya jadi tahu berapa banyak lamaran yang sudah saya kirim dan berapa yang sampai tahap wawancara. Membantu saya tetap termotivasi."</p>
+                    <h4>- Budi S., Fresh Graduate</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Siap Mengatur Karier Anda?</h2>
+            <p>Buat akun gratis hari ini dan ubah cara Anda melamar kerja.</p>
+            <a href="app.html" class="btn btn-primary btn-large">Daftar Gratis</a>
         </div>
     </section>
 
@@ -62,20 +118,55 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver((entries) => {
+            // --- Logika Animasi On-Scroll ---
+            const scrollObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('visible');
-                        observer.unobserve(entry.target); // Animasi hanya berjalan sekali
+                        scrollObserver.unobserve(entry.target);
                     }
                 });
-            }, {
-                threshold: 0.1 // Muncul saat 10% elemen terlihat
+            }, { threshold: 0.1 });
+
+            const animatedElements = document.querySelectorAll('.feature-card, .testimonial-card, .step');
+            animatedElements.forEach(el => {
+                scrollObserver.observe(el);
             });
 
-            const featureCards = document.querySelectorAll('.feature-card');
-            featureCards.forEach(card => {
-                observer.observe(card);
+            // --- LOGIKA DARK MODE BARU ---
+            const themeToggleButton = document.getElementById('theme-toggle-btn');
+            const currentTheme = localStorage.getItem('theme');
+
+            if (currentTheme === 'dark') {
+                document.body.classList.add('dark');
+            }
+
+            themeToggleButton.addEventListener('click', function() {
+                document.body.classList.toggle('dark');
+                let theme = 'light';
+                if (document.body.classList.contains('dark')) {
+                    theme = 'dark';
+                }
+                localStorage.setItem('theme', theme);
+            });
+
+            // --- Logika Navigasi Aktif On-Scroll ---
+            const sections = document.querySelectorAll('section[id], header[id]');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const navObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            const linkHref = link.getAttribute('href').substring(1);
+                            link.classList.toggle('active', linkHref === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px' });
+
+            sections.forEach(section => {
+                navObserver.observe(section);
             });
         });
     </script>
