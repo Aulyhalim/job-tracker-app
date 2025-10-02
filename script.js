@@ -149,7 +149,8 @@ function handleLogout() {
     if (charts.trend) charts.trend.destroy();
     if (charts.status) charts.status.destroy();
     charts = {};
-    showAuthPage();
+    // Arahkan ke halaman perkenalan (index.html), bukan lagi showAuthPage()
+    window.location.href = 'index.html';
 }
 
 function updateHeader() {
