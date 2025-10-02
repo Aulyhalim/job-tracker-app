@@ -6,33 +6,15 @@ const { runMigrations } = require('./db/runMigrations');
 
 const app = express();
 
-// SOLUSI: Konfigurasi CORS yang lebih ketat dan benar
-app.use(cors({
-  origin: function (origin, callback) {
-    // Daftar origin yang diizinkan
-    const allowedOrigins = [
-      'http://127.0.0.1:5500',
-      'http://localhost:5500',
-      'https://auly-job-tracker-app.vercel.app'
-    ];
-    
-    // Izinkan jika:
-    // 1. Tidak ada origin (terjadi pada beberapa Postman/cURL/file:///)
-    // 2. Origin ada di daftar allowedOrigins
-    // 3. Origin berasal dari vercel.app (untuk preview deployments)
-    if (!origin || 
-        allowedOrigins.includes(origin) || 
-        origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      // Tolak permintaan dari origin lain
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+// --- KONFIGURASI CORS BARU YANG LEBIH EKSPLISIT ---
+const corsOptions = {
+  origin: 'https://auly-job-tracker-app.vercel.app', // Hanya izinkan domain Vercel Anda
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] // Tambah header yang umum
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -172,8 +154,7 @@ app.put('/api/user/:userId', async (req, res) => {
 
 
 // --- CRUD UNTUK APPLICATIONS ---
-
-// GET: Mengambil semua lamaran milik seorang user
+// ... (sisa kode Anda untuk CRUD applications tidak perlu diubah)
 app.get('/api/applications/user/:userId', async (req, res) => {
     try {
         const applications = await Application.findAll({
@@ -186,10 +167,8 @@ app.get('/api/applications/user/:userId', async (req, res) => {
     }
 });
 
-// POST: Membuat lamaran baru
 app.post('/api/applications', async (req, res) => {
     try {
-        // Pastikan model sudah diperbarui untuk menerima expectedSalary, source, interviewDate
         const newApplication = await Application.create(req.body);
         res.status(201).json(newApplication);
     } catch (error) {
@@ -198,7 +177,6 @@ app.post('/api/applications', async (req, res) => {
     }
 });
 
-// PUT: Mengupdate lamaran yang ada
 app.put('/api/applications/:id', async (req, res) => {
     try {
         const application = await Application.findByPk(req.params.id);
@@ -213,7 +191,6 @@ app.put('/api/applications/:id', async (req, res) => {
     }
 });
 
-// DELETE: Menghapus satu lamaran spesifik
 app.delete('/api/applications/:id', async (req, res) => {
     try {
         const application = await Application.findByPk(req.params.id);
@@ -228,8 +205,6 @@ app.delete('/api/applications/:id', async (req, res) => {
     }
 });
 
-
-// DELETE: Menghapus SEMUA lamaran milik seorang user
 app.delete('/api/applications/user/:userId', async (req, res) => {
     try {
         await Application.destroy({
@@ -246,7 +221,7 @@ const startServer = async () => {
   await runMigrations();
 
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, '0.0.0.0', () => {  // ← Tambahkan '0.0.0.0'
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server berhasil berjalan di port ${PORT}`);
   });
 };
