@@ -1044,3 +1044,61 @@ body.dark .interview-list li {
         display: none; 
     }
 }
+
+/* ==========================================================================
+   12. TOAST NOTIFICATIONS (BARU)
+   ========================================================================== */
+
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 250px;
+    animation: slideIn 0.3s ease forwards, fadeOut 0.5s ease 3s forwards;
+    opacity: 0;
+}
+
+.toast-icon {
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+/* Tipe Toast */
+.toast.success { background-color: var(--success-color); }
+.toast.error { background-color: var(--danger-color); }
+.toast.info { background-color: var(--info-color); }
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

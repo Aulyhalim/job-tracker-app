@@ -76,6 +76,7 @@
                         <div class="user-profile">
                             <div class="user-avatar" id="userAvatar"></div>
                             <span class="user-name" id="userName"></span>
+                            <button class="btn-sm" onclick="showPage('profile')" title="My Profile" style="background: var(--secondary-color); color: white;"><i class="fas fa-user-edit"></i></button>
                             <button class="btn btn-logout btn-sm" onclick="handleLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                         </div>
                     </div>
@@ -125,6 +126,47 @@
                                 <div><div class="setting-name">Clear All Data</div></div>
                                 <button class="btn btn-danger btn-sm" onclick="clearAllData()"><i class="fas fa-trash"></i> Clear Data</button>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <div id="profile" class="page">
+                        <div class="settings-section">
+                            <h3>Edit Profile Information</h3>
+                            <p style="font-size: 14px; color: var(--secondary-color); margin-top: -8px; margin-bottom: 20px;">
+                                Leave password fields blank if you don't want to change it.
+                            </p>
+                            <form id="profileForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="profileUsername">Username</label>
+                                        <input type="text" id="profileUsername" class="form-input" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="profileEmail">Email</label>
+                                        <input type="email" id="profileEmail" class="form-input" required>
+                                    </div>
+                                </div>
+                                <hr style="border: none; border-top: 1px solid var(--border-light); margin: 20px 0;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="currentPassword">Current Password (Required for changes)</label>
+                                        <input type="password" id="currentPassword" class="form-input" placeholder="Enter current password to save">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="newPassword">New Password</label>
+                                        <input type="password" id="newPassword" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                                        <input type="password" id="confirmPassword" class="form-input">
+                                    </div>
+                                </div>
+                                 <div class="form-row" style="margin-top: 24px;">
+                                    <button type="submit" class="btn btn-primary" style="flex: 1;"><i class="fas fa-save"></i> Save Changes</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </main>
@@ -184,5 +226,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="script.js"></script>
+    
+    <div id="toastContainer"></div>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // --- GLOBAL STATE ---
-const API_BASE_URL = 'https://job-tracker-app-production.up.railway.app';
+const API_BASE_URL = 'https://job-tracker-app-production.up.railway.app'; 
 let currentUser = null;
 let applications = []; // Data ini sekarang akan diambil dari server
 let settings = {};
@@ -7,6 +7,30 @@ let editingId = null;
 let currentPage = 'dashboard';
 let charts = {};
 const defaultSettings = { darkMode: false };
+
+// --- BARU: FUNGSI UNTUK MENAMPILKAN TOAST NOTIFICATION ---
+function showToast(message, type = 'success', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let iconClass = 'fas fa-check-circle';
+    if (type === 'error') iconClass = 'fas fa-times-circle';
+    if (type === 'info') iconClass = 'fas fa-info-circle';
+    
+    toast.innerHTML = `<i class="toast-icon ${iconClass}"></i> ${message}`;
+    
+    container.appendChild(toast);
+
+    // Hapus toast setelah durasi tertentu
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.5s ease forwards';
+        setTimeout(() => toast.remove(), 500);
+    }, duration);
+}
+
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', initializeApp);
@@ -77,10 +101,8 @@ async function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
-    const loginError = document.getElementById('loginError');
-    loginError.textContent = '';
+    
     try {
-        // DIPERBAIKI: Menggunakan API_BASE_URL
         const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -91,11 +113,11 @@ async function handleLogin(e) {
         
         currentUser = data.user.username;
         sessionStorage.setItem('jobTrackerCurrentUser', data.user.username);
-        sessionStorage.setItem('jobTrackerUserId', data.user.id); // SIMPAN USER ID
+        sessionStorage.setItem('jobTrackerUserId', data.user.id);
         
         showMainApp();
     } catch (error) {
-        loginError.textContent = error.message;
+        showToast(error.message, 'error');
     }
 }
 
@@ -103,29 +125,26 @@ async function handleRegister(e) {
     e.preventDefault();
     const username = document.getElementById('registerUsername').value;
     const password = document.getElementById('registerPassword').value;
-    // PENAMBAHAN: Ambil nilai email
-    const email = document.getElementById('registerEmail').value; 
-    const registerError = document.getElementById('registerError');
-    registerError.textContent = '';
+    const email = document.getElementById('registerEmail').value;
+    
     try {
-        // DIPERBAIKI: Menggunakan API_BASE_URL dan mengirim email
         const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, email }), // Kirim email
+            body: JSON.stringify({ username, password, email }),
         });
         const data = await response.json();
         if (!response.ok) { throw new Error(data.error || 'Registration failed'); }
-        alert('Registration successful! Please log in.');
+        showToast('Registration successful! Please log in.', 'success');
         showLoginForm();
     } catch (error) {
-        registerError.textContent = error.message;
+        showToast(error.message, 'error');
     }
 }
 
 function handleLogout() {
     currentUser = null;
-    sessionStorage.clear(); // Hapus semua data sesi
+    sessionStorage.clear();
     applications = [];
     if (charts.trend) charts.trend.destroy();
     if (charts.status) charts.status.destroy();
@@ -147,14 +166,13 @@ async function fetchApplications() {
         return;
     }
     try {
-        // DIPERBAIKI: Menggunakan API_BASE_URL
         const response = await fetch(`${API_BASE_URL}/api/applications/user/${userId}`);
         if (!response.ok) throw new Error("Failed to fetch data.");
         const data = await response.json();
-        applications = data; // Isi array global dengan data dari server
+        applications = data;
     } catch (error) {
         console.error(error);
-        applications = []; // Pastikan array kosong jika terjadi error
+        applications = [];
     }
 }
 
@@ -163,12 +181,12 @@ function setupAppEventListeners() {
     document.getElementById('searchInput').addEventListener('input', debounce(renderApplications, 300));
     document.getElementById('statusFilter').addEventListener('change', renderApplications);
     document.getElementById('sortBy').addEventListener('change', renderApplications);
-    
-    // PENAMBAHAN: Event listener untuk menampilkan/menyembunyikan Interview Date
     document.getElementById('status').addEventListener('change', toggleInterviewDateInput);
+    
+    // BARU: Event listener untuk form profil
+    document.getElementById('profileForm').addEventListener('submit', handleProfileUpdate);
 }
 
-// PENAMBAHAN FUNGSI: Logika untuk menampilkan/menyembunyikan input Interview Date
 function toggleInterviewDateInput() {
     const isInterview = document.getElementById('status').value === 'interview';
     document.getElementById('interviewDateRow').style.display = isInterview ? 'flex' : 'none';
@@ -215,7 +233,6 @@ function applyTheme() {
 
 function openModal(id = null) {
     editingId = id;
-    const modal = document.getElementById('applicationModal');
     const form = document.getElementById('applicationForm');
     form.reset();
     
@@ -230,22 +247,18 @@ function openModal(id = null) {
             document.getElementById('notes').value = app.notes || '';
             document.getElementById('expectedSalary').value = app.expectedSalary || '';
             document.getElementById('source').value = app.source || 'LinkedIn';
-            
-            // PENAMBAHAN: Memuat data Interview Date
             const isInterview = app.status === 'interview';
             document.getElementById('interviewDateRow').style.display = isInterview ? 'flex' : 'none';
             document.getElementById('interviewDate').required = isInterview;
-            // Split('T')[0] untuk memastikan format 'yyyy-mm-dd' yang diterima oleh input type="date"
             document.getElementById('interviewDate').value = app.interviewDate ? app.interviewDate.split('T')[0] : '';
         }
     } else {
         document.getElementById('modalTitle').textContent = 'Add New Application';
         setTodayDate();
-        // PENAMBAHAN: Sembunyikan input wawancara saat mode tambah
         document.getElementById('interviewDateRow').style.display = 'none'; 
         document.getElementById('interviewDate').required = false; 
     }
-    modal.classList.add('active');
+    document.getElementById('applicationModal').classList.add('active');
 }
 
 function closeModal() {
@@ -265,11 +278,9 @@ async function handleFormSubmit(e) {
         userId: parseInt(userId),
         expectedSalary: document.getElementById('expectedSalary').value,
         source: document.getElementById('source').value,
-        // PENAMBAHAN: Mengambil data Interview Date
         interviewDate: document.getElementById('interviewDate').value || null 
     };
 
-    // DIPERBAIKI: Menggunakan API_BASE_URL
     let url = `${API_BASE_URL}/api/applications`;
     let method = 'POST';
 
@@ -288,23 +299,92 @@ async function handleFormSubmit(e) {
         
         await fetchApplications();
         
-        // SINKRONISASI DATA LINTAS HALAMAN (Permintaan Anda)
         renderDashboard();       
         renderApplications();    
         renderCompanies();       
         renderCalendar();        
         renderAnalytics();       
 
-        // renderCurrentPage() akan memastikan halaman yang ditampilkan saat ini adalah yang terbaru.
         showPage(currentPage);
         closeModal();
+        showToast(editingId ? 'Application updated!' : 'Application added!', 'success');
     } catch (error) {
-        console.error(error);
-        alert("Error saving application.");
+        showToast("Error saving application.", 'error');
     }
 }
 
-// PENAMBAHAN FUNGSI: Render Companies
+// --- BARU: LOGIKA UNTUK HALAMAN PROFIL ---
+async function populateProfileForm() {
+    const userId = sessionStorage.getItem('jobTrackerUserId');
+    if (!userId) {
+        showToast("User not found, please log in again.", 'error');
+        return;
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/user/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch profile data.');
+        
+        const user = await response.json();
+        document.getElementById('profileUsername').value = user.username;
+        document.getElementById('profileEmail').value = user.email;
+
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function handleProfileUpdate(e) {
+    e.preventDefault();
+    const userId = sessionStorage.getItem('jobTrackerUserId');
+    
+    const username = document.getElementById('profileUsername').value;
+    const email = document.getElementById('profileEmail').value;
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (!currentPassword) {
+        showToast('Current password is required to save changes.', 'error');
+        return;
+    }
+    if (newPassword !== confirmPassword) {
+        showToast('New passwords do not match.', 'error');
+        return;
+    }
+    
+    const updateData = { username, email, currentPassword };
+    if (newPassword) {
+        updateData.newPassword = newPassword;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+        });
+        
+        const result = await response.json();
+        if (!response.ok) { throw new Error(result.error || 'Failed to update profile.'); }
+        
+        showToast('Profile updated successfully!', 'success');
+        
+        sessionStorage.setItem('jobTrackerCurrentUser', result.username);
+        currentUser = result.username;
+        updateHeader();
+        
+        showPage('settings');
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// --- FUNGSI RENDER HALAMAN ---
 function renderCompanies() {
     const page = document.getElementById('companiesGrid');
     if (!page) return;
@@ -314,7 +394,6 @@ function renderCompanies() {
         return;
     }
 
-    // Mendapatkan daftar perusahaan unik dan jumlah aplikasi
     const companyMap = applications.reduce((acc, app) => {
         acc[app.company] = (acc[app.company] || 0) + 1;
         return acc;
@@ -334,12 +413,10 @@ function renderCompanies() {
     page.innerHTML = html;
 }
 
-// PENAMBAHAN FUNGSI: Render Analytics (Termasuk Rata-Rata Gaji)
 function renderAnalytics() {
     const page = document.getElementById('analyticsGrid');
     if (!page) return;
     
-    // Hitung rata-rata gaji dari aplikasi yang memiliki nilai
     const validSalaries = applications
         .map(app => parseFloat(app.expectedSalary))
         .filter(salary => !isNaN(salary) && salary > 0);
@@ -348,7 +425,6 @@ function renderAnalytics() {
         ? (validSalaries.reduce((sum, sal) => sum + sal, 0) / validSalaries.length) 
         : 0;
 
-    // Format mata uang IDR
     const formattedAvgSalary = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(avgSalary);
 
     page.innerHTML = `
@@ -362,12 +438,10 @@ function renderAnalytics() {
     `;
 }
 
-// PENAMBAHAN FUNGSI: Render Calendar (Daftar Wawancara)
 function renderCalendar() {
     const page = document.getElementById('calendarGrid');
     if (!page) return;
 
-    // Filter aplikasi yang berstatus 'interview' dan memiliki tanggal wawancara
     const interviewApps = applications
         .filter(app => app.status === 'interview' && app.interviewDate)
         .sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate));
@@ -377,7 +451,6 @@ function renderCalendar() {
          return;
     }
 
-    // Implementasi sederhana: Daftar wawancara yang akan datang
     let html = '<h3>Upcoming Interviews</h3><ul class="interview-list" style="list-style: none; padding-left: 0;">';
     interviewApps.forEach(app => {
         const date = app.interviewDate ? formatDate(app.interviewDate) : 'Date TBD'; 
@@ -395,10 +468,10 @@ function renderCurrentPage() {
     switch (currentPage) {
         case 'dashboard': renderDashboard(); break;
         case 'applications': renderApplications(); break;
-        // PENAMBAHAN: Panggil fungsi render untuk halaman baru
         case 'analytics': renderAnalytics(); break;
         case 'calendar': renderCalendar(); break;
         case 'companies': renderCompanies(); break;
+        case 'profile': populateProfileForm(); break; // BARU: Panggil fungsi render profil
         default:
             const page = document.getElementById(currentPage);
             if (page && !page.innerHTML) {
@@ -481,12 +554,10 @@ function getFilteredApplications() {
 async function deleteApplication(id) {
     if (confirm('Are you sure you want to delete this application?')) {
         try {
-            // DIPERBAIKI: Menggunakan API_BASE_URL
             const response = await fetch(`${API_BASE_URL}/api/applications/${id}`, { method: 'DELETE' });
             if (!response.ok && response.status !== 204) throw new Error("Failed to delete.");
             await fetchApplications();
             
-            // SINKRONISASI DATA LINTAS HALAMAN
             renderDashboard();       
             renderApplications();    
             renderCompanies();       
@@ -494,24 +565,21 @@ async function deleteApplication(id) {
             renderAnalytics();       
 
             renderCurrentPage();
+            showToast('Application deleted.', 'info');
         } catch (error) {
-            console.error(error);
-            alert("Error deleting application.");
+            showToast("Error deleting application.", 'error');
         }
     }
 }
 
-// DIPERBAIKI: Menggunakan versi final dari clearAllData
 async function clearAllData() {
     if (confirm('DANGER! This will permanently delete all applications for your account. Are you sure?')) {
         const userId = sessionStorage.getItem('jobTrackerUserId');
         try {
-            // DIPERBAIKI: Menggunakan API_BASE_URL
             const response = await fetch(`${API_BASE_URL}/api/applications/user/${userId}`, { method: 'DELETE' });
             if (!response.ok && response.status !== 204) throw new Error("Failed to clear data.");
             await fetchApplications();
             
-            // SINKRONISASI DATA LINTAS HALAMAN
             renderDashboard();       
             renderApplications();    
             renderCompanies();       
@@ -519,9 +587,9 @@ async function clearAllData() {
             renderAnalytics();       
 
             renderCurrentPage();
+            showToast('All data has been cleared!', 'success');
         } catch (error) {
-            console.error(error);
-            alert("Error clearing data.");
+            showToast("Error clearing data.", 'error');
         }
     }
 }
@@ -533,7 +601,19 @@ function updateChart() { if (!charts.trend) return; const period = parseInt(docu
 function updateStatusChart() { if (!charts.status) return; const chartData = getStatusData(); charts.status.data.datasets[0].data = chartData.data; charts.status.update(); }
 function getTrendData(days) { const labels = Array.from({ length: days }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d; }).reverse(); const data = labels.map(date => { const dateStr = date.toISOString().split('T')[0]; return applications.filter(app => app.applicationDate.startsWith(dateStr)).length; }); return { labels: labels.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })), data }; }
 function getStatusData() { const stats = calculateStats(); return { labels: ['Applied', 'Interview', 'Accepted', 'Rejected'], data: [stats.applied, stats.interview, stats.accepted, stats.rejected] }; }
-function exportData() { if (applications.length === 0) return alert('No data to export.'); const jsonData = JSON.stringify({ applications, exportDate: new Date().toISOString() }, null, 2); const blob = new Blob([jsonData], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `job_applications_${currentUser}_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); }
+function exportData() { 
+    if (applications.length === 0) {
+        showToast('No data to export.', 'info');
+        return;
+    }
+    const jsonData = JSON.stringify({ applications, exportDate: new Date().toISOString() }, null, 2); 
+    const blob = new Blob([jsonData], { type: 'application/json' }); 
+    const a = document.createElement('a'); 
+    a.href = URL.createObjectURL(blob); 
+    a.download = `job_applications_${currentUser}_${new Date().toISOString().split('T')[0]}.json`; 
+    a.click(); 
+    URL.revokeObjectURL(a.href); 
+}
 function formatDate(d) { try { return new Date(d).toLocaleDateString('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return 'Invalid Date'; } }
 function getStatusLabel(s) { return { applied: 'Applied', interview: 'Interview', accepted: 'Accepted', rejected: 'Rejected' }[s] || 'N/A'; }
 function getStatusIcon(s) { return { applied: 'paper-plane', interview: 'users', accepted: 'check-circle', rejected: 'times-circle' }[s] || 'circle'; }
