@@ -99,6 +99,76 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// --- MANAJEMEN PROFIL PENGGUNA ---
+
+// GET: Mengambil data user berdasarkan ID
+app.get('/api/user/:userId', async (req, res) => {
+    try {
+        const user = await User.findByPk(req.params.userId, {
+            // Kita hanya mengirim kolom yang aman (bukan password)
+            attributes: ['id', 'username', 'email'] 
+        });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: 'Failed to fetch user data.' });
+    }
+});
+
+// PUT: Mengupdate data user
+app.put('/api/user/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const { username, email, currentPassword, newPassword } = req.body;
+
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        // 1. Validasi Password Saat Ini
+        if (user.password !== currentPassword) {
+            return res.status(403).json({ error: 'Incorrect current password.' });
+        }
+        
+        // 2. Cek apakah username atau email baru sudah digunakan oleh user lain
+        const existingUser = await User.findOne({
+            where: {
+                [Sequelize.Op.or]: [{ username }, { email }],
+                id: { [Sequelize.Op.ne]: userId } // Kecualikan user saat ini
+            }
+        });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username or email is already in use by another account.' });
+        }
+
+        // 3. Update field
+        user.username = username;
+        user.email = email;
+        
+        // 4. Update password HANYA jika newPassword diisi
+        if (newPassword && newPassword.length > 0) {
+            user.password = newPassword; 
+            // CATATAN KEAMANAN: Di aplikasi production, password HARUS di-hash.
+        }
+
+        await user.save();
+        
+        // Kirim kembali data user yang sudah diupdate (tanpa password)
+        res.status(200).json({
+            id: user.id,
+            username: user.username,
+            email: user.email
+        });
+
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Failed to update profile.' });
+    }
+});
 
 
 // --- CRUD UNTUK APPLICATIONS ---
