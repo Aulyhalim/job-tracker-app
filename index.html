@@ -26,7 +26,7 @@
             <p>Atur semua proses lamaran kerjamu di satu tempat, mulai dari mengirim CV hingga jadwal wawancara.</p>
             <a href="app.html" class="btn btn-primary btn-large">Mulai Sekarang, Gratis!</a>
             <div class="hero-image">
-                <img src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=1974&auto=format&fit=crop" alt="Tampilan Aplikasi Job Tracker" style="max-width: 700px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);" />
+                <img src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=1974&auto-format&fit=crop" alt="Tampilan Aplikasi Job Tracker" style="max-width: 700px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);" />
             </div>
         </div>
     </header>
@@ -59,6 +59,26 @@
             <p>&copy; 2025 Auly Job Tracker. All Rights Reserved.</p>
         </div>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target); // Animasi hanya berjalan sekali
+                    }
+                });
+            }, {
+                threshold: 0.1 // Muncul saat 10% elemen terlihat
+            });
+
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
 
 </body>
 </html>

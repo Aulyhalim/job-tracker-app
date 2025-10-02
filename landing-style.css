@@ -1,7 +1,7 @@
 /* Import Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-/* Variabel Warna (disamakan dengan style.css utama Anda) */
+/* Variabel Warna */
 :root {
     --primary-color: #3b82f6;
     --secondary-color: #64748b;
@@ -45,11 +45,13 @@ body {
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
 }
 
 .btn-primary:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
+    background-color: #2563eb;
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary {
@@ -71,6 +73,8 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+    /* BARU: Animasi fade-in */
+    animation: fadeIn 0.8s ease-out;
 }
 
 .navbar .container {
@@ -96,10 +100,20 @@ body {
     text-align: center;
 }
 
+.hero-content h1,
+.hero-content p,
+.hero-content .btn-large,
+.hero-image {
+    /* BARU: Sembunyikan elemen sebelum animasi */
+    opacity: 0;
+}
+
 .hero-content h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
     color: var(--text-dark);
+    /* BARU: Animasi staggered */
+    animation: slideInUp 0.8s ease-out 0.2s forwards;
 }
 
 .hero-content p {
@@ -109,10 +123,19 @@ body {
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
+    /* BARU: Animasi staggered */
+    animation: slideInUp 0.8s ease-out 0.4s forwards;
+}
+
+.hero-content .btn-large {
+    /* BARU: Animasi staggered */
+    animation: slideInUp 0.8s ease-out 0.6s forwards;
 }
 
 .hero-image {
     margin-top: 3rem;
+    /* BARU: Animasi staggered */
+    animation: scaleIn 1s ease-out 0.8s forwards;
 }
 
 /* Features Section */
@@ -139,6 +162,17 @@ body {
     border-radius: 12px;
     text-align: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    /* BARU: Tambahan transisi untuk hover */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* BARU: Sembunyikan kartu sebelum di-scroll */
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* BARU: Efek hover untuk kartu fitur */
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card i {
@@ -152,10 +186,53 @@ body {
     margin-bottom: 0.5rem;
 }
 
+/* BARU: Kelas yang akan ditambahkan oleh JavaScript saat kartu terlihat */
+.feature-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+
 /* Footer */
 .footer {
     padding: 2rem 0;
     text-align: center;
     background-color: var(--text-dark);
     color: var(--text-light);
+}
+
+/* ==========================================================================
+   BARU: ANIMATION KEYFRAMES
+   ========================================================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
